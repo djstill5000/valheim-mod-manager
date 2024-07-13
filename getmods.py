@@ -8,12 +8,21 @@ import os
 import shutil
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+from configparser import ConfigParser
+
+file = 'config.ini'
+config = ConfigParser()
+config.read(file)
 
 warnings.simplefilter("ignore")
 
 chunk_size = 1024
-modsdir = '/home/derek/.config/r2modmanPlus-local/Valheim/profiles/Main/BepInEx/plugins'
+#modsdir = '/home/derek/.config/r2modmanPlus-local/Valheim/profiles/Main/BepInEx/plugins'
 
+modsdir = str(config['PARAMETERS']['mods_dir'])
+modscsv = str(config['PARAMETERS']['mods_csv'])
+
+#Parse Webpage and return newest mod version
 def getversions(url):
     reqs = requests.get(url)
     soup = BeautifulSoup(reqs.text, 'html.parser')
@@ -26,6 +35,7 @@ def getversions(url):
 
     return links[0]
 
+#Truncates and formats mod name to be legible in the progress bar
 def truncate(url, iterations):
     if iterations == 3:
         return url
@@ -33,6 +43,7 @@ def truncate(url, iterations):
         newurl = url[0:url.rfind('/')]
         return truncate(newurl, iterations+1)
 
+#Scans requested mods and formats them and stores into a list
 def read_csv(file_path):
     data_list = []
 
@@ -47,12 +58,12 @@ def read_csv(file_path):
     return data_list
 
 
-def emptyfolder(moddir):
-    dirs = os.listdir(moddir)
+def emptyfolder(modsdir):
+    dirs = os.listdir(modsdir)
 
     for doc in dirs:
-        actualdir = moddir + '/' + doc
-        print(moddir + '/' + doc)
+        actualdir = modsdir + '/' + doc
+        print(modsdir + '/' + doc)
         if doc.endswith('.dll'):
             pass
         elif os.path.isfile(actualdir):
@@ -60,22 +71,22 @@ def emptyfolder(moddir):
         elif os.path.isdir(actualdir):
             shutil.rmtree(actualdir)
 
-def emptyfolder2(moddir):
-    dirs = os.listdir(moddir)
+
+def emptyfolder2(modsdir):
+    dirs = os.listdir(modsdir)
 
     for doc in dirs:
-        actualdir = moddir + '/' + doc
+        actualdir = modsdir + '/' + doc
         if doc.endswith('.zip'):
             os.remove(actualdir)
         else:
             pass
 
 
-file_path = 'mods.csv'
 emptyfolder(modsdir)
-urls = read_csv(file_path)
+urls = read_csv(modscsv)
 
-
+#Creates loading bar in terminal
 for i in range(len(urls)):
 
     modversion = getversions(urls[i])
