@@ -17,7 +17,6 @@ config.read(file)
 warnings.simplefilter("ignore")
 
 chunk_size = 1024
-#modsdir = '/home/derek/.config/r2modmanPlus-local/Valheim/profiles/Main/BepInEx/plugins'
 
 modsdir = str(config['PARAMETERS']['mods_dir'])
 modscsv = str(config['PARAMETERS']['mods_csv'])
@@ -58,6 +57,7 @@ def read_csv(file_path):
     return data_list
 
 
+#Removes old mods if mods.csv has been changed
 def emptyfolder(modsdir):
     dirs = os.listdir(modsdir)
 
@@ -72,6 +72,7 @@ def emptyfolder(modsdir):
             shutil.rmtree(actualdir)
 
 
+#Deletes the zipped folders from the newly created mods
 def emptyfolder2(modsdir):
     dirs = os.listdir(modsdir)
 
@@ -86,7 +87,8 @@ def emptyfolder2(modsdir):
 emptyfolder(modsdir)
 urls = read_csv(modscsv)
 
-#Creates loading bar in terminal
+
+#Adds new mods to the mods directory
 for i in range(len(urls)):
 
     modversion = getversions(urls[i])
@@ -96,12 +98,12 @@ for i in range(len(urls)):
     mod = modversion[len(index_one)+1:-1]
     filesize = int(req.headers['content-length'])
     fileloc = modsdir + '/' + filename
+
+    #Creates loading bar in terminal
     with open(fileloc, 'wb') as f:
         for chunk in tqdm(iterable = req.iter_content(chunk_size=chunk_size), total = filesize/chunk_size, unit = 'MB', ascii = '-#', desc = mod):
             if chunk:
-                f.write(chunk
-)
-    #print(filename)
+                f.write(chunk)
     newpath = os.path.join(modsdir, os.path.splitext(filename)[0])
     os.makedirs(newpath)
     shutil.unpack_archive(fileloc, modsdir + '/' + os.path.splitext(filename)[0])
