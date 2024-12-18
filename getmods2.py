@@ -6,9 +6,11 @@ import warnings
 import csv
 import os
 import shutil
+import re
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from configparser import ConfigParser
+from googlesearch import search
 
 file = 'config.ini'
 config = ConfigParser()
@@ -20,6 +22,7 @@ chunk_size = 1024
 
 modsdir = str(config['PARAMETERS']['mods_dir'])
 modscsv = str(config['PARAMETERS']['mods_csv'])
+mod_dependencies = []
 
 #Parse Webpage and return newest mod version
 def getversions(url):
@@ -30,9 +33,19 @@ def getversions(url):
 
     for link in soup.find_all('a'):
         if type(link.get('href')) == str:
+            #print(link.get('href')) == str
             if 'https://thunderstore.io/package/download/' in link.get('href'):
                 links.append(link.get('href'))
 
+    dependencies = []
+    h5 = soup.find_all('h5')
+    for index, tag in enumerate(h5):
+        if index > 0:
+            dependencies.append(tag.get_text(strip=True))
+    #print(dependencies)
+    for item in dependencies:
+        if item not in mod_dependencies:
+            mod_dependencies.append(item)
     return links[0]
 
 #Truncates and formats mod name to be legible in the progress bar
@@ -85,9 +98,18 @@ def emptyfolder2(modsdir):
             pass
 
 
+#Installs all required mod dependencies
+def handle_dependencies():
+     mod_dep_urls = []
+     mod_dependencies.remove('denikson-BepInExPack_Valheim')
+
+     #Possible bug here that the first link is not thunderstore.io, have it ensure that it is
+     for mod in mod_dependencies:
+        for url in search(mod, tld="co.in", num=1, stop=1):
+            mod_dep_urls.append(url)
+
 emptyfolder(modsdir)
 urls = read_csv(modscsv)
-
 
 #Adds new mods to the mods directory
 for i in range(len(urls)):
@@ -109,4 +131,5 @@ for i in range(len(urls)):
     os.makedirs(newpath)
     shutil.unpack_archive(fileloc, modsdir + '/' + os.path.splitext(filename)[0])
 
+handle_dependencies()
 emptyfolder2(modsdir)
